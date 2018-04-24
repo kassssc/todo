@@ -28,7 +28,7 @@ def main():
 					"   [opt_arg]:\tlist index of task or the task string itself to be deleted\n"
 				 )
 
-	# Print usage documentation and exits if no arguments given
+	# Print usage documentation and exit if no arguments given
 	if 1 == len(sys.argv):
 		print(USAGE_TEXT)
 		sys.exit()
@@ -77,16 +77,20 @@ def main():
 
 	# Delete task mode
 	elif mode == 'del' or mode == "delete":
-		# use optional argument if provided, else prompt for input
-		if opt_arg is not None:
-			user_input = opt_arg
-		else:
-			for index, task in enumerate(todo_list):
-				print(' ' + str(index) + ' : ' + task)
-			print(" * Hit enter without any input to cancel")
-			user_input = input("Enter the id of the task or the task itself to be deleted: ")
 
-		delete_from_list(user_input, todo_list)
+		if len(todo_list) == 0:
+			print("The todo list is empty, nothing to delete")
+		else:
+			# use optional argument if provided, else prompt for input
+			if opt_arg is not None:
+				user_input = opt_arg
+			else:
+				for index, task in enumerate(todo_list):
+					print(' ' + str(index) + ' : ' + task)
+				print(" * Hit enter without any input to cancel")
+				user_input = input("Enter the index of the task or the task itself to be deleted: ")
+
+			delete_from_list(user_input, todo_list)
 
 	# Any other argument will trigger usage text to be printed
 	else:
@@ -95,9 +99,9 @@ def main():
 	# Save data to json file for storage
 	save_data(todo_list)
 
-	#**************
+	#*************
 	# END PROGRAM
-	#**************
+	#*************
 
 def delete_from_list(user_input, todo_list):
 	'''
@@ -110,7 +114,6 @@ def delete_from_list(user_input, todo_list):
 		If that string exists matches a task in that list, remove that task
 		If multiple instances of the same task exists, only the first is deleted.
 	'''
-
 	try:
 		index = int(user_input) # Throws ValueError if not parsable to int
 		if index in range(len(todo_list)):
@@ -118,19 +121,18 @@ def delete_from_list(user_input, todo_list):
 			del todo_list[index]
 		else:
 			print("Invalid index provided, nothing deleted")
-		return
 
 	# Value Error thrown means user entered a non-integer input
 	except ValueError:
 		# Check for empty string
 		if user_input == "":
-			print("Delete cancelled")
+			print("Delete canceled")
 			return
 
-		# If it exists in the list, loop through and get the corresponding index
-		for task in todo_list:
+		# Loop through the list to check for entered task
+		for index, task in enumerate(todo_list):
 			if user_input.lower() == task.lower(): # ignore case
-				del todo_list[todo_list.index(task)]
+				del todo_list[index]
 				print("Task \"" + task + "\" deleted")
 				return
 
@@ -139,8 +141,8 @@ def delete_from_list(user_input, todo_list):
 
 def load_data():
 	'''
-	Handles cases where the data file already exists and doesn't exist
-	Returns the previously stored data in the form of a list.
+	Creates the storage json file with an empty list if it doesn't exist,
+	otherwise, returns the stored todo list in the json file
 	'''
 	# If the data file doesn't exist, create it and load it with an empty list
 	if not os.path.exists(DATA_FILE):
@@ -155,7 +157,6 @@ def load_data():
 
 def save_data(todo_list):
 	'''Stores the data in the list to the json file'''
-
 	with open(DATA_FILE, 'w') as data_file:
 		json.dump({ TODO_DATA: todo_list }, data_file)
 
