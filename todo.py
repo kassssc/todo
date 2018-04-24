@@ -12,38 +12,32 @@ import os
 def main():
 	'''Main method of the CLI todo list program'''
 
+	global DATA_FILE, TODO_DATA
+
 	# define constants
 	DATA_FILE = "todo_data.json" # Name of json file to store data
-	TODO_LIST = "todo_list" # key to access todo list in json dictionary
+	TODO_DATA = "todo_list" # key to access todo list in json dictionary
 	USAGE_TEXT = (
-					"usage: todo.py <mode> [opt_arg]\n"
+					"USAGE: todo.py <mode> [opt_arg]\n"
 					"\nmodes:\n"
 					" a, add\t\tadd a new task\n"
-					"  opt_arg:\ttask to add (must be quoted if contains spaces)\n"
+					"  [opt_arg]:\ttask to add (must be quoted if contains spaces)\n"
 					" a+, add+\tadd multiple tasks\n"
 					" ls, list\tlist all tasks\n"
 					" del, delete\tdelete an existing task\n"
-					"   opt_arg:\tindex of task to be deleted\n"
+					"   [opt_arg]:\tlist index of task or the task string itself to be deleted\n"
 				 )
 
-	# Print usage documentation if no arguments given
+	# Print usage documentation and exits if no arguments given
 	if 1 == len(sys.argv):
 		print(USAGE_TEXT)
 		sys.exit()
 
-	# If the data file doesn't exist, create it and load it with empty data
-	if not os.path.exists(DATA_FILE):
-		with open(DATA_FILE, 'w') as data_file:
-			json.dump({ TODO_LIST: [] }, data_file)
-
-	# load tasks stored previously
-	with open(DATA_FILE, 'r') as data_file:
-		json_data = json.load(data_file)
-	todo_list = json_data[TODO_LIST]
+	# Load data from storage json file
+	todo_list = load_data()
 
 	# First argument will specify mode
 	mode = sys.argv[1]
-
 	# Extract program optional argument (if provided)
 	if len(sys.argv) >= 3:
 		opt_arg = sys.argv[2]
@@ -52,10 +46,12 @@ def main():
 
 	# Add task mode
 	if mode == 'a' or mode == "add":
+		# use optional argument if provided, else prompt for input
 		if opt_arg is not None:
 			new_task = opt_arg
 		else:
 			new_task = input("Enter the task to add: ")
+
 		# Adds to todo list only if not empty
 		if new_task != "":
 			todo_list.append(new_task)
@@ -81,30 +77,87 @@ def main():
 
 	# Delete task mode
 	elif mode == 'del' or mode == "delete":
+		# use optional argument if provided, else prompt for input
 		if opt_arg is not None:
-			del_index = opt_arg
-
+			user_input = opt_arg
 		else:
-			print("-1 : Cancel Deleting")
 			for index, task in enumerate(todo_list):
 				print(' ' + str(index) + ' : ' + task)
-			del_index = input("Enter the id of task to be deleted: ")
+			print(" * Hit enter without any input to cancel")
+			user_input = input("Enter the id of the task or the task itself to be deleted: ")
 
-		try:
-			del_index = int(del_index) # Throws ValueError if not parsable to int
-			if del_index != -1: # don't delete if user enters -1
-				del todo_list[del_index] # throws IndexError if not within range
-		except (IndexError, ValueError):
-			print("Invalid index provided")
+		delete_from_list(user_input, todo_list)
 
 	# Any other argument will trigger usage text to be printed
 	else:
 		print(USAGE_TEXT)
 
-	# save tasks to json file then exit
+	# Save data to json file for storage
+	save_data(todo_list)
+
+	#**************
+	# END PROGRAM
+	#**************
+
+def delete_from_list(user_input, todo_list):
+	'''
+	If user_input is parsable an integer,
+		If the index is in range, deletes the task at that index
+		otherwise will return, doing nothing.
+	If user_input is a string (not parsable as integer),
+		if it is an empty string, return doing nothing
+		If that string doesn't match any task in the list, return doing nothing.
+		If that string exists matches a task in that list, remove that task
+		If multiple instances of the same task exists, only the first is deleted.
+	'''
+
+	try:
+		index = int(user_input) # Throws ValueError if not parsable to int
+		if index in range(len(todo_list)):
+			print("Task \"" + todo_list[index] + "\" deleted")
+			del todo_list[index]
+		else:
+			print("Invalid index provided, nothing deleted")
+		return
+
+	# Value Error thrown means user entered a non-integer input
+	except ValueError:
+		# Check for empty string
+		if user_input == "":
+			print("Delete cancelled")
+			return
+
+		# If it exists in the list, loop through and get the corresponding index
+		for task in todo_list:
+			if user_input.lower() == task.lower(): # ignore case
+				del todo_list[todo_list.index(task)]
+				print("Task \"" + task + "\" deleted")
+				return
+
+		# Reached only if task provided doesn't match any in the list
+		print("Task \"" + user_input + "\" doesn't exist in the list")
+
+def load_data():
+	'''
+	Handles cases where the data file already exists and doesn't exist
+	Returns the previously stored data in the form of a list.
+	'''
+	# If the data file doesn't exist, create it and load it with an empty list
+	if not os.path.exists(DATA_FILE):
+		with open(DATA_FILE, 'w') as data_file:
+			json.dump({ TODO_DATA: [] }, data_file)
+
+	# load tasks stored previously
+	with open(DATA_FILE, 'r') as data_file:
+		json_data = json.load(data_file)
+
+	return json_data[TODO_DATA]
+
+def save_data(todo_list):
+	'''Stores the data in the list to the json file'''
+
 	with open(DATA_FILE, 'w') as data_file:
-		json.dump({ TODO_LIST: todo_list }, data_file)
-	sys.exit()
+		json.dump({ TODO_DATA: todo_list }, data_file)
 
 # Program Entry Point
 if __name__ == '__main__': main()
