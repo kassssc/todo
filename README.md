@@ -5,7 +5,9 @@ Kass Chupongstimun
 
 24/04/2018
 
-USAGE: todo.py <mode> [opt_arg]
+USAGE:
+    
+    todo.py <mode> [opt_arg]
 
 modes:
 
