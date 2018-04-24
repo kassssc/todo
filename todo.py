@@ -33,7 +33,7 @@ def main():
 		print(USAGE_TEXT)
 		sys.exit()
 
-	# Load data from storage json file
+	# Load stored data from storage json file
 	todo_list = load_data()
 
 	# First argument will specify mode
@@ -78,6 +78,7 @@ def main():
 	# Delete task mode
 	elif mode == 'del' or mode == "delete":
 
+		# can only delete if there is something on the list
 		if len(todo_list) == 0:
 			print("The todo list is empty, nothing to delete")
 		else:
